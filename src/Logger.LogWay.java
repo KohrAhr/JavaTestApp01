@@ -1,0 +1,1 @@
+enum LogWay { FILE_WRITTER, STREAM_WRITTER }
