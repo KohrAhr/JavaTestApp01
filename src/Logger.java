@@ -111,7 +111,7 @@ public class Logger
 
   private String LogValueFormatted(String value)
   {
-    return value.replace(LoggerConsts.CONST_OUTPUT_PATTERN, new Date().toString()).
+    return LoggerConsts.CONST_OUTPUT_PATTERN.replace(LoggerConsts.CONST_PATTERN_TIMESTAMP, Helper.GetFormattedDateForLog()).
       replace(LoggerConsts.CONST_PATTERN_SPLITTER, splitter).
       replace(LoggerConsts.CONST_PATTERN_VALUE, value);
 

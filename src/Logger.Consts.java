@@ -22,7 +22,7 @@ class LoggerConsts {
   //    TXT
   public static final String CONST_OUTPUTFILE_DEFAULT_VALUE = "{%Folder%}{%TimeStamp%} {%FileName%}.{%FileExtension%}";
 
-  public static final String CONST_OUTPUT_PATTERN = "{%TimeStamp%}{%Splitter%}{%Value%}";
+  public static final String CONST_OUTPUT_PATTERN = "{%TimeStamp%}{%Splitter%}{%Value%}\n";
 
   public static final String CONST_DATEFORMAT_IN_LOG = "yyyy-MM-dd HH:mm:ss.SSS";
 }
