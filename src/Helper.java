@@ -20,7 +20,7 @@ public class Helper
       if (!theDir.exists())
       {
   //        System.out.println("An error occurred.");
-          throw new IOException("Cannot create output folder: " + folder);
+        throw new IOException("Cannot create output folder: " + folder);
       }
     }
     catch(IOException e)

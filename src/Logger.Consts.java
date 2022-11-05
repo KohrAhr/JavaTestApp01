@@ -1,4 +1,5 @@
-class LoggerConsts {
+class LoggerConsts 
+{
   public static final String CONST_PATTERN_FOLDER = "{%Folder%}";
   public static final String CONST_PATTERN_TIMESTAMP = "{%TimeStamp%}";
   public static final String CONST_PATTERN_FILENAME = "{%FileName%}";
