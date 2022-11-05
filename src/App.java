@@ -5,6 +5,10 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+//import java.util.concurrent.Callable;
+//import java.util.function.Function;
+
+//import org.xml.sax.ErrorHandler;
 
 public class App 
 {
@@ -14,7 +18,59 @@ public class App
   private static final int CONST_MIN_LENGTH = 42;
   // 1st attempt we always make. 
   // So, 2 mean that we handle error only once. This is not 2 additional attempt to first one, it's two attempt at all. 
-  private static final int CONST_MAX_ATTEMPTS = 3;
+  // So, 6 mean that we handle error five times. First obligatory run plus 5 extra attempts.
+  // IMHP we should have not less than 3 attempts and not more than 6 for sure
+  private static final int CONST_MAX_ATTEMPTS = 5;
+
+  public static int errorHandler(int aErrorCounter, SQLException aE) throws InterruptedException, SQLException
+  {
+    // Counter of errors.
+    aErrorCounter++;
+
+    System.out.println(String.format("Cannot connect to database. Attempt No %s failed", aErrorCounter));
+    System.out.println(String.format("Error message is: %s", aE.getMessage()));
+
+    // Did we make already enought attempts to re-run?
+    if (aErrorCounter >= CONST_MAX_ATTEMPTS)
+    {
+      /*
+        Show detailed error
+        No needs to show detailed error messsage here anymore, because in next list we call exception and error message will appear in main thread
+      */
+      // aE.printStackTrace();
+
+      /* Bye bye */
+      throw new SQLException(aE);
+    }
+
+    // Delays in seconds on attempt; Formula;
+    // 1  4   9   16  25  = 55 sec total all attempts.  x * x
+    // 4  9   16  25  36  = 90 sec total all attempts.  (x + 1) * (x + 1)
+    // 2  6   12  20  30  = 70 sec total all attempts.  (x + 1) * x
+    // 3  8   15  24  35  = 85 sec total all attempts.  (x + 2) * x
+
+    // Delay Formula: (x + 1) * (x + 1)
+    // 4 sec after 1st failure
+    // 9 sec after 2nd failure
+    // 16 sec after 3rd failure
+
+    // Use Formula you like to calculate delay interval on this iteration step
+    int delay = (aErrorCounter + 1) * aErrorCounter;
+
+    // Funny sleep timer
+    System.out.println(String.format("Delay in seconds before another attempt is %s", delay));
+    System.out.print("Sleep");
+    for (int i = 0;i< delay;i++)
+    {
+      // InterruptedException
+      Thread.sleep(1000);
+      
+      System.out.print(".");
+    }
+    System.out.println();
+
+    return aErrorCounter;
+  }
 
   public static String ResultFormat(String AValue)
   {
@@ -25,6 +81,32 @@ public class App
     }
     return AValue;
   }
+
+//   public static void safeRun(Object f) throws InterruptedException, SQLException
+//   {
+//     int errorCounter = 0;
+//     boolean completed = false;
+
+//     completed = false;
+//     do
+//     {
+//       try
+//       {
+// //        f.invoke();
+
+//         completed = true;
+//       }
+//       // Swallow SQL server connection error. Handle it on special way.
+//       catch (SQLException e) 
+//       {
+// //        errorCounter = errorHandler(errorCounter, e);
+//       }    
+//     } while (errorCounter < CONST_MAX_ATTEMPTS || completed);
+//   }
+
+  // public interface MyInterface {
+  //   void doSomething();
+  // }  
 
   public static void main(String[] args) throws Exception 
   {
@@ -65,9 +147,14 @@ public class App
 
     ResultSet resultSet = null;
     Connection connection = null;
-    int delay = 0;
-
     int errorCounter = 0;
+    boolean completed = false;
+
+    /*
+      Establish connection
+      Please do not optimize it and do not merge it with connection.createStatement() function. 
+      Reason: we really want to catch and have possibility to distinguish problem with initial connection and future executions
+    */
     do
     {
       try
@@ -75,68 +162,41 @@ public class App
         connection = DriverManager.getConnection(connectionUrl);
         
         // Leave from Do-While block
-        break;
+        completed = true;
       }
-      // Shallow SQL server connection error. Handle it on special way.
+      // Swallow SQL server connection error. Handle it on special way.
       catch (SQLException e) 
       {
-        // Counter of errors.
-        errorCounter++;
-
-        System.out.println(String.format("Cannot connect to database. Attempt No %s failed", errorCounter));
-        System.out.println(String.format("Error message is: %s", e.getMessage()));
-
-        // Did we make already enought attempts to re-run?
-        if (errorCounter >= CONST_MAX_ATTEMPTS)
-        {
-          // Show detailed error
-          e.printStackTrace();
-
-          // Bye bye
-          throw new Exception();
-        }
-
-        // Delays in seconds on attempt; Formula;
-        // 1  4   9   16  25  = 55 sec total all attempts.  x * x
-        // 4  9   16  25  36  = 90 sec total all attempts.  (x + 1) * (x + 1)
-        // 2  6   12  20  30  = 70 sec total all attempts.  (x + 1) * x
-
-        // Delay Formula: (x + 1) * (x + 1)
-        // 4 sec after 1st failure
-        // 9 sec after 2nd failure
-        // 16 sec after 3rd failule
-
-        // Use Formula you like to calculate delay interval on this iteration step
-        delay = (errorCounter + 1) * errorCounter;
-
-        // Funny sleep timer
-        System.out.print("Sleep");
-        System.out.println(String.format("Delay in seconds before another attempt is %s", delay));
-        for (int i = 0;i< delay;i++)
-        {
-          Thread.sleep(1000);
-          System.out.print(".");
-        }
-        System.out.println();
+        errorCounter = errorHandler(errorCounter, e);
       }    
-    } while (!(errorCounter >= CONST_MAX_ATTEMPTS));
+    } while (errorCounter < CONST_MAX_ATTEMPTS || completed);
+
+    // reset error counter and Completed status
+    errorCounter = 0;
+    completed = false;
 
     // 1st SQL command
-    try (Statement statement = connection.createStatement())
+    final String selectSql = "select @@VERSION as E1 union all SELECT CAST(@@CONNECTIONS as VARCHAR);";
+    completed = false;
+    do
     {
-      final String selectSql = "select @@VERSION as E1 union all SELECT CAST(@@CONNECTIONS as VARCHAR);";
-      resultSet = statement.executeQuery(selectSql);
-
-      while (resultSet.next()) 
+      try (Statement statement = connection.createStatement())
       {
-        System.out.println(resultSet.getString(0) + " " + resultSet.getString(1));
+        resultSet = statement.executeQuery(selectSql);
+
+        while (resultSet.next()) 
+        {
+          System.out.println(resultSet.getString(0) + " " + resultSet.getString(1));
+        }
+
+        completed = true;
       }
-    }
-    catch (SQLException e) 
-    {
-      e.printStackTrace();
-      throw new Exception();
-    }    
+      // Swallow SQL server connection error. Handle it on special way.
+      catch (SQLException e) 
+      {
+        errorCounter = errorHandler(errorCounter, e);
+      }    
+    } while (errorCounter < CONST_MAX_ATTEMPTS || completed);
 
 //    System.out.println(Runtime.version());
 
@@ -164,4 +224,5 @@ public class App
 
     System.out.println(Helper.GetFormattedDateForLog());
   }
+
 }
