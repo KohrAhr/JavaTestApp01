@@ -143,7 +143,7 @@ public class App
       );
     }
 
-    final String connectionUrl = "jdbc:sqlserver://localhost:1433;database=;user=;password=;encrypt=false;trustServerCertificate=false;loginTimeout=30;";
+    final String connectionUrl = "jdbc:sqlserver://localhost:1433;database=;user=;password=;encrypt=false;trustServerCertificate=false;loginTimeout=10;";
 
     ResultSet resultSet = null;
     Connection connection = null;
@@ -157,7 +157,7 @@ public class App
     */
     do
     {
-      System.out.println(String.format("Trying to connect SQL server. Attempt: %s", errorCounter));
+      System.out.println("Trying to connect to SQL server..");
       try
       {
         connection = DriverManager.getConnection(connectionUrl);
@@ -168,7 +168,18 @@ public class App
       // Swallow SQL server connection error. Handle it on special way.
       catch (SQLException e) 
       {
-        errorCounter = errorHandler(errorCounter, e);
+          // Ok, at this moment we are retrying all errors, but if it's Uid/Pwd incorrect, than we don't have to retry and we should fail immidiately
+        int errorCode = e.getErrorCode();
+        // 18456 -- Login failed
+        // 4060 -- Wrong Default Db
+        if (errorCode != 18456 && errorCode != 4060)
+        {
+          errorCounter = errorHandler(errorCounter, e);
+        }
+        else
+        {
+          throw e;
+        }
       }    
     } 
     /*
@@ -198,14 +209,32 @@ public class App
           System.out.println(resultSet.getString(1));
         }
 
+        // Permission to leave from Do-While block
         completed = true;
       }
       // Swallow SQL server connection error. Handle it on special way.
       catch (SQLException e) 
       {
-        errorCounter = errorHandler(errorCounter, e);
+        // Ok, at this moment we are retrying all errors, but if it's Uid/Pwd incorrect, than we don't have to retry and we should fail immidiately
+        int errorCode = e.getErrorCode();
+        // 18456 -- Login failed
+        // 4060 -- Wrong Default Db
+        if (errorCode != 18456 && errorCode != 4060)
+        {
+          errorCounter = errorHandler(errorCounter, e);
+        }
+        else
+        {
+          throw e;
+        }
       }    
-    } while (errorCounter < CONST_MAX_ATTEMPTS && !completed);
+    } 
+    /*
+      Continue until:
+      1) we didn't hit maximum attempts
+      2) connection cannot be established because of the exception
+    */
+    while (errorCounter < CONST_MAX_ATTEMPTS && !completed);
 
 //    System.out.println(Runtime.version());
 
