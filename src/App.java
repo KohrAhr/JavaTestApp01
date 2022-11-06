@@ -1,5 +1,7 @@
 // CLASSPATH=.;C:\Program Files\Microsoft JDBC Driver 8.4 for SQL Server\sqljdbc_8.4\enu\mssql-jdbc-8.4.1.jre11.jar
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -7,6 +9,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 //import java.util.concurrent.Callable;
 //import java.util.function.Function;
+import java.util.Properties;
 
 //import org.xml.sax.ErrorHandler;
 
@@ -143,7 +146,19 @@ public class App
       );
     }
 
-    final String connectionUrl = "jdbc:sqlserver://localhost:1433;database=;user=;password=;encrypt=false;trustServerCertificate=false;loginTimeout=10;";
+    // Read config file
+    Properties properties = new Properties();
+    String fileName = "App.config";
+    try (FileInputStream configFile = new FileInputStream(fileName)) 
+    {
+      properties.load(configFile);
+    } 
+    catch (IOException e) 
+    {
+      throw e;  
+    }
+
+    final String connectionUrl = properties.getProperty("ConnString");
 
     ResultSet resultSet = null;
     Connection connection = null;
