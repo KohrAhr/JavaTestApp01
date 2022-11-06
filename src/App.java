@@ -1,5 +1,3 @@
-// CLASSPATH=.;C:\Program Files\Microsoft JDBC Driver 8.4 for SQL Server\sqljdbc_8.4\enu\mssql-jdbc-8.4.1.jre11.jar
-
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.Connection;
@@ -7,9 +5,12 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 //import java.util.concurrent.Callable;
 //import java.util.function.Function;
 import java.util.Properties;
+
+import com.microsoft.sqlserver.jdbc.SQLServerException;
 
 //import org.xml.sax.ErrorHandler;
 
@@ -18,7 +19,6 @@ public class App
   // Output folder should end with separator
   private static final String CONST_OUTPUT_FOLDER = "C:\\Temp\\DD\\{%TimeStamp%}\\";
 
-  private static final int CONST_MIN_LENGTH = 42;
   // 1st attempt we always make. 
   // So, 2 mean that we handle error only once. This is not 2 additional attempt to first one, it's two attempt at all. 
   // So, 6 mean that we handle error five times. First obligatory run plus 5 extra attempts.
@@ -75,16 +75,6 @@ public class App
     return aErrorCounter;
   }
 
-  public static String ResultFormat(String AValue)
-  {
-    int x = CONST_MIN_LENGTH - AValue.length();
-    if (AValue.length() < CONST_MIN_LENGTH)
-    {
-      AValue += " ".repeat(x);
-    }
-    return AValue;
-  }
-
 //   public static void safeRun(Object f) throws InterruptedException, SQLException
 //   {
 //     int errorCounter = 0;
@@ -110,6 +100,40 @@ public class App
   // public interface MyInterface {
   //   void doSomething();
   // }  
+
+
+  public static int HandleSqlException(int aErrorCounter, SQLException aE) throws InterruptedException, SQLException
+  {
+    // Ok, at this moment we are retrying all errors, but if it's Uid/Pwd incorrect, than we don't have to retry and we should fail immidiately
+    // 18456 -- Login failed
+    // 4060 -- Wrong Default Db
+    // https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues?view=azuresql
+
+    int[] codes = 
+    {
+      // Login failed
+      18456,
+      // Wrong default db
+      4060,
+      // Other unknown?
+      0
+    };
+
+    int errorCode = aE.getErrorCode();
+    // Maybe in future... when ErrorCode=0 this info will help us
+    // String sqlError = aE.getSQLState();
+
+    if (Arrays.stream(codes).anyMatch(x -> x == errorCode))
+    {
+      aErrorCounter = errorHandler(aErrorCounter, aE);
+    }
+    else
+    {
+      throw aE;
+    }
+
+    return aErrorCounter;
+  }
 
   public static void main(String[] args) throws Exception 
   {
@@ -142,7 +166,7 @@ public class App
     {
       System.out.println
       (
-        String.format("%s: %s", ResultFormat(item), System.getProperty(item))
+        String.format("%s: %s", Helper.ResultFormat(item), System.getProperty(item))
       );
     }
 
@@ -181,20 +205,9 @@ public class App
         completed = true;
       }
       // Swallow SQL server connection error. Handle it on special way.
-      catch (SQLException e) 
+      catch (SQLServerException e) 
       {
-          // Ok, at this moment we are retrying all errors, but if it's Uid/Pwd incorrect, than we don't have to retry and we should fail immidiately
-        int errorCode = e.getErrorCode();
-        // 18456 -- Login failed
-        // 4060 -- Wrong Default Db
-        if (errorCode != 18456 && errorCode != 4060)
-        {
-          errorCounter = errorHandler(errorCounter, e);
-        }
-        else
-        {
-          throw e;
-        }
+        errorCounter = HandleSqlException(errorCounter, e);
       }    
     } 
     /*
@@ -228,20 +241,9 @@ public class App
         completed = true;
       }
       // Swallow SQL server connection error. Handle it on special way.
-      catch (SQLException e) 
+      catch (SQLServerException e) 
       {
-        // Ok, at this moment we are retrying all errors, but if it's Uid/Pwd incorrect, than we don't have to retry and we should fail immidiately
-        int errorCode = e.getErrorCode();
-        // 18456 -- Login failed
-        // 4060 -- Wrong Default Db
-        if (errorCode != 18456 && errorCode != 4060)
-        {
-          errorCounter = errorHandler(errorCounter, e);
-        }
-        else
-        {
-          throw e;
-        }
+        errorCounter = HandleSqlException(errorCounter, e);
       }    
     } 
     /*

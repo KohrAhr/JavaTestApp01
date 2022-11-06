@@ -6,6 +6,18 @@ import java.io.IOException;
 
 public class Helper 
 {
+  private static final int CONST_MIN_LENGTH = 42;
+
+  public static String ResultFormat(String AValue)
+  {
+    int x = CONST_MIN_LENGTH - AValue.length();
+    if (AValue.length() < CONST_MIN_LENGTH)
+    {
+      AValue += " ".repeat(x);
+    }
+    return AValue;
+  }
+
   public static void CreateFolder(String folder) throws IOException
   {
     File theDir = new File(folder);
