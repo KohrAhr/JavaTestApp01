@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "src"
+		}
+  ],
+  "settings": {
+    "java.project.referencedLibraries": {
+      "include": [
+        "lib/**/*.jar"
+      ]
+    }
+  }
+}
