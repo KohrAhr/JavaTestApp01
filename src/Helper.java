@@ -10,12 +10,23 @@ public class Helper
 
   public static String ResultFormat(String AValue)
   {
-    int x = CONST_MIN_LENGTH - AValue.length();
-    if (AValue.length() < CONST_MIN_LENGTH)
+    /* 
+      For Version 8 
+    */
+    while (AValue.length() < CONST_MIN_LENGTH)
     {
-      AValue += " ".repeat(x);
+      AValue += " ";
     }
-    return AValue;
+    /* 
+      For Version 17 
+    */
+    // int x = CONST_MIN_LENGTH - AValue.length();
+    // if (AValue.length() < CONST_MIN_LENGTH)
+    // {
+    //   AValue += " ".repeat(x);
+    // }
+    
+     return AValue;
   }
 
   public static void CreateFolder(String folder) throws IOException

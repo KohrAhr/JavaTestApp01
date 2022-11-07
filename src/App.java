@@ -1,3 +1,7 @@
+/*
+  Compatible with 1.8.0_351
+ */
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.Connection;
@@ -74,33 +78,6 @@ public class App
 
     return aErrorCounter;
   }
-
-//   public static void safeRun(Object f) throws InterruptedException, SQLException
-//   {
-//     int errorCounter = 0;
-//     boolean completed = false;
-
-//     completed = false;
-//     do
-//     {
-//       try
-//       {
-// //        f.invoke();
-
-//         completed = true;
-//       }
-//       // Swallow SQL server connection error. Handle it on special way.
-//       catch (SQLException e) 
-//       {
-// //        errorCounter = errorHandler(errorCounter, e);
-//       }    
-//     } while (errorCounter < CONST_MAX_ATTEMPTS || completed);
-//   }
-
-  // public interface MyInterface {
-  //   void doSomething();
-  // }  
-
 
   public static int HandleSqlException(int aErrorCounter, SQLException aE) throws InterruptedException, SQLException
   {
@@ -181,7 +158,7 @@ public class App
       throw e;   
     }
 
-    AppData.dbConnectionString = AppData.appProperties.getProperty("ConnString");
+    AppData.dbConnectionString = AppData.appProperties.getProperty("ConnStringMSSQL");
 
     // #endregion
 
@@ -197,7 +174,7 @@ public class App
     */
     do
     {
-      System.out.println("Trying to connect to SQL server..");
+      System.out.println("Trying to connect to MS SQL Server 2019...");
       try
       {
         connection = DriverManager.getConnection(AppData.dbConnectionString);
@@ -223,7 +200,7 @@ public class App
     // #region 1st SQL command
     // reset error counter and Completed status
     errorCounter = 0;
-    completed = false;
+    completed = false;  
     final String selectSql = "select @@VERSION as E1 union all SELECT CAST(@@CONNECTIONS as VARCHAR);";
     do
     {
@@ -255,29 +232,29 @@ public class App
 
 //    System.out.println(Runtime.version());
 
-    LoggerParams loggerParams = new LoggerParams
-    (
-      CONST_OUTPUT_FOLDER,
-      LoggerConsts.CONST_FILE_NAME_FORMAT,
-      "ABRA_CAD_ABRA",
-      LoggerConsts.CONST_FILE_NAME_EXTENSION,
-      LogWay.STREAM_WRITTER
-    );
+    // LoggerParams loggerParams = new LoggerParams
+    // (
+    //   CONST_OUTPUT_FOLDER,
+    //   LoggerConsts.CONST_FILE_NAME_FORMAT,
+    //   "ABRA_CAD_ABRA",
+    //   LoggerConsts.CONST_FILE_NAME_EXTENSION,
+    //   LogWay.STREAM_WRITTER
+    // );
 
-    Logger universe = new Logger(loggerParams);
-    System.out.println(universe.GetFileName());
+    // Logger universe = new Logger(loggerParams);
+    // System.out.println(universe.GetFileName());
 
-    // #region Dummy logic
-    int CONST_REPEAT_COUNT = 1000;
-    for (int x = 0; x < 100; x++) 
-    {
-      universe.Log("Test 1".repeat(CONST_REPEAT_COUNT));
-      universe.Log("Test 2".repeat(CONST_REPEAT_COUNT));
-      universe.Log("Test 3".repeat(CONST_REPEAT_COUNT));
-    }
-    // #endregion
+    // // #region Dummy logic
+    // // int CONST_REPEAT_COUNT = 1000;
+    // // for (int x = 0; x < 100; x++) 
+    // // {
+    // //   universe.Log("Test 1".repeat(CONST_REPEAT_COUNT));
+    // //   universe.Log("Test 2".repeat(CONST_REPEAT_COUNT));
+    // //   universe.Log("Test 3".repeat(CONST_REPEAT_COUNT));
+    // // }
+    // // #endregion
 
-    System.out.println(Helper.GetFormattedDateForLog());
+    // System.out.println(Helper.GetFormattedDateForLog());
   }
 
 }
