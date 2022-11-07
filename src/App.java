@@ -8,7 +8,7 @@ import java.sql.Statement;
 import java.util.Arrays;
 //import java.util.concurrent.Callable;
 //import java.util.function.Function;
-import java.util.Properties;
+
 
 import com.microsoft.sqlserver.jdbc.SQLServerException;
 
@@ -170,19 +170,20 @@ public class App
       );
     }
 
-    // Read config file
-    Properties properties = new Properties();
+    // #region Read and proceed Config file
     String fileName = "App.config";
     try (FileInputStream configFile = new FileInputStream(fileName)) 
     {
-      properties.load(configFile);
+      AppData.appProperties.load(configFile);
     } 
     catch (IOException e) 
     {
-      throw e;  
+      throw e;   
     }
 
-    final String connectionUrl = properties.getProperty("ConnString");
+    AppData.dbConnectionString = AppData.appProperties.getProperty("ConnString");
+
+    // #endregion
 
     ResultSet resultSet = null;
     Connection connection = null;
@@ -199,7 +200,7 @@ public class App
       System.out.println("Trying to connect to SQL server..");
       try
       {
-        connection = DriverManager.getConnection(connectionUrl);
+        connection = DriverManager.getConnection(AppData.dbConnectionString);
         
         // Leave from Do-While block
         completed = true;
@@ -219,13 +220,11 @@ public class App
     */
     while (errorCounter < CONST_MAX_ATTEMPTS && !completed);
 
+    // #region 1st SQL command
     // reset error counter and Completed status
     errorCounter = 0;
     completed = false;
-
-    // 1st SQL command
     final String selectSql = "select @@VERSION as E1 union all SELECT CAST(@@CONNECTIONS as VARCHAR);";
-    completed = false;
     do
     {
       try (Statement statement = connection.createStatement())
@@ -252,6 +251,7 @@ public class App
       2) connection cannot be established because of the exception
     */
     while (errorCounter < CONST_MAX_ATTEMPTS && !completed);
+    // #endregion
 
 //    System.out.println(Runtime.version());
 
